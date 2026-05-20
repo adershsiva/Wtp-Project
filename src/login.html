@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Login | Poll Management App</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .login-card h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      text-align: center;
+      margin-bottom: 28px;
+      color: #666;
+      font-size: 15px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #0d6efd;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      background: #0b5ed7;
+    }
+
+    .register-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    .register-link a {
+      color: #0d6efd;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
+    .message {
+      display: none;
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #e7f3ff;
+      color: #084298;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 24px;
+      }
+
+      .login-card h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<main class="page">
+  <section class="login-card">
+    <h1>Login</h1>
+    <p class="subtitle">Login to the Poll Management Application</p>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Enter username"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter password"
+        />
+      </div>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="message" id="message">
+      Login button clicked.
+    </div>
+
+    <div class="register-link">
+      Do not have an account?
+      <a href="register.html">Register here</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  const loginForm = document.getElementById("loginForm");
+  const message = document.getElementById("message");
+
+  loginForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    console.log("Username:", username);
+    console.log("Password:", password);
+
+    message.style.display = "block";
+
+    // Later, after backend is connected, you can redirect to dashboard:
+    // window.location.href = "dashboard.html";
+  });
+</script>
+</body>
+</html>
