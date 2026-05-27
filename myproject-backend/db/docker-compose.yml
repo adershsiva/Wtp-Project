@@ -1,0 +1,12 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: db
+    restart: always
+    environment:
+      MARIADB_DATABASE: myproject
+      MARIADB_ROOT_PASSWORD: asdf1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db-data:/var/lib/mysql
