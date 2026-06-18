@@ -19,7 +19,6 @@ public class PollController {
 
     @PostMapping
     public ResponseEntity<PollDTO> createPoll(@Valid @RequestBody PollDTO pollDTO, @RequestParam Long userId) {
-        // userId is passed as a param for now since we skipped Phase 3
         return new ResponseEntity<>(pollService.createPoll(pollDTO, userId), HttpStatus.CREATED);
     }
 
@@ -38,14 +37,19 @@ public class PollController {
         return ResponseEntity.ok(pollService.updatePoll(id, pollDTO));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePoll(@PathVariable Long id) {
-        pollService.deletePoll(id);
-        return ResponseEntity.noContent().build();
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<PollDTO> inviteUser(@PathVariable Long id, @RequestParam String username, @RequestParam Long userId) {
+        return ResponseEntity.ok(pollService.inviteUser(id, username, userId));
     }
 
     @PatchMapping("/{id}/finish")
-    public ResponseEntity<PollDTO> finishPoll(@PathVariable Long id) {
-        return ResponseEntity.ok(pollService.finishPoll(id));
+    public ResponseEntity<PollDTO> finishPoll(@PathVariable Long id, @RequestParam Long userId) {
+        return ResponseEntity.ok(pollService.finishPoll(id, userId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePoll(@PathVariable Long id, @RequestParam Long userId) {
+        pollService.deletePoll(id, userId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,7 +1,7 @@
 package com.example.pollApp.entity;
 
 public enum QuestionType {
-    TEXT,
+    PLAIN_TEXT,
     BOOLEAN,
-    SCALE_1_TO_5
+    NUMERIC_1_TO_5
 }

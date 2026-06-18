@@ -1,5 +1,7 @@
 package com.example.pollApp.controller;
 
+import com.example.pollApp.dto.LoginRequest;
+import com.example.pollApp.dto.LoginResponse;
 import com.example.pollApp.dto.UserDTO;
 import com.example.pollApp.service.AuthService;
 import jakarta.validation.Valid;
@@ -21,5 +23,10 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserDTO> register(@Valid @RequestBody UserDTO userDTO) {
         return new ResponseEntity<>(authService.register(userDTO), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(authService.login(loginRequest));
     }
 }

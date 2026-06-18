@@ -24,15 +24,16 @@ public class PollService {
 
     @Transactional
     public PollDTO createPoll(PollDTO pollDTO, Long creatorId) {
+        if (pollRepository.existsByTitle(pollDTO.getTitle())) {
+            throw new IllegalStateException("A poll with the exact same title already exists.");
+        }
+
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + creatorId));
 
         Poll poll = pollMapper.toEntity(pollDTO);
         poll.setCreator(creator);
         poll.setFinished(false);
-
-        // Ensure bidirectional relationship for questions is set by the mapper 
-        // (already handled in PollMapper.toEntity)
 
         Poll savedPoll = pollRepository.save(poll);
         return pollMapper.toDto(savedPoll);
@@ -57,29 +58,63 @@ public class PollService {
         Poll existingPoll = pollRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));
 
+        if (pollRepository.existsByTitleAndIdNot(pollDTO.getTitle(), id)) {
+            throw new IllegalStateException("A poll with the exact same title already exists.");
+        }
+
         existingPoll.setTitle(pollDTO.getTitle());
         existingPoll.setDescription(pollDTO.getDescription());
-        
-        // Note: Simple update. Complex question updates might require more logic 
-        // to handle removing/adding specific questions.
+        existingPoll.setDueDate(pollDTO.getDueDate());
         
         Poll updatedPoll = pollRepository.save(existingPoll);
         return pollMapper.toDto(updatedPoll);
     }
 
     @Transactional
-    public void deletePoll(Long id) {
-        if (!pollRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Poll not found with id: " + id);
+    public PollDTO inviteUser(Long pollId, String username, Long creatorId) {
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll not found"));
+        
+        if (!poll.getCreator().getId().equals(creatorId)) {
+            throw new IllegalStateException("Only the creator can invite users.");
         }
-        pollRepository.deleteById(id);
+
+        User userToInvite = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        if (userToInvite.getId().equals(creatorId)) {
+            throw new IllegalStateException("A creator cannot invite themselves to their own poll.");
+        }
+
+        if (!poll.getInvitedUsers().contains(userToInvite)) {
+            poll.getInvitedUsers().add(userToInvite);
+        }
+
+        return pollMapper.toDto(pollRepository.save(poll));
     }
 
     @Transactional
-    public PollDTO finishPoll(Long id) {
+    public PollDTO finishPoll(Long id, Long creatorId) {
         Poll poll = pollRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));
+        
+        if (!poll.getCreator().getId().equals(creatorId)) {
+            throw new IllegalStateException("Only the creator can finish the poll.");
+        }
+
         poll.setFinished(true);
         return pollMapper.toDto(pollRepository.save(poll));
+    }
+
+    @Transactional
+    public void deletePoll(Long id, Long creatorId) {
+        Poll poll = pollRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));
+
+        if (!poll.getCreator().getId().equals(creatorId)) {
+            throw new IllegalStateException("Only the creator can delete the poll.");
+        }
+
+        pollRepository.delete(poll);
     }
 }

@@ -6,9 +6,11 @@ import com.example.pollApp.exception.ResourceNotFoundException;
 import com.example.pollApp.mapper.ParticipationMapper;
 import com.example.pollApp.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,9 +36,21 @@ public class ParticipationService {
             throw new IllegalStateException("Cannot participate in a finished poll");
         }
 
+        if (poll.getDueDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Cannot participate in a poll after its due date");
+        }
+
+        if (!poll.getInvitedUsers().contains(user)) {
+            throw new IllegalStateException("User is not invited to this poll");
+        }
+
         // Check if already participated
         if (participationRepository.findByPollAndUser(poll, user).isPresent()) {
             throw new IllegalStateException("User already participated in this poll");
+        }
+
+        if (participationDTO.getAnswers().size() != poll.getQuestions().size()) {
+            throw new IllegalStateException("All questions must be answered");
         }
 
         Participation participation = new Participation();
@@ -47,6 +61,16 @@ public class ParticipationService {
             Question question = questionRepository.findById(aDto.getQuestionId())
                     .orElseThrow(() -> new ResourceNotFoundException("Question not found: " + aDto.getQuestionId()));
             
+            // Validation for numeric type
+            if (question.getType() == QuestionType.NUMERIC_1_TO_5) {
+                try {
+                    int val = Integer.parseInt(aDto.getContent());
+                    if (val < 1 || val > 5) throw new Exception();
+                } catch (Exception e) {
+                    throw new IllegalStateException("Numeric answers must be between 1 and 5");
+                }
+            }
+
             Answer answer = new Answer();
             answer.setQuestion(question);
             answer.setContent(aDto.getContent());
@@ -57,6 +81,24 @@ public class ParticipationService {
         participation.setAnswers(answers);
         
         return participationMapper.toDto(participationRepository.save(participation));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Poll> getPendingPolls(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Get polls where user is invited
+        // Filtering in memory for simplicity in this prototype, 
+        // could be optimized with a custom repository query.
+        return pollRepository.findAll(Sort.by(Sort.Direction.DESC, "dueDate")).stream()
+                .filter(p -> p.getInvitedUsers().contains(user))
+                .filter(p -> !p.isFinished())
+                .filter(p -> p.getDueDate().isAfter(now))
+                .filter(p -> participationRepository.findByPollAndUser(p, user).isEmpty())
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

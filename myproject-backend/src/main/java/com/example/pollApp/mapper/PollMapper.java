@@ -2,6 +2,7 @@ package com.example.pollApp.mapper;
 
 import com.example.pollApp.dto.PollDTO;
 import com.example.pollApp.entity.Poll;
+import com.example.pollApp.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +20,13 @@ public class PollMapper {
                 .id(poll.getId())
                 .title(poll.getTitle())
                 .description(poll.getDescription())
+                .dueDate(poll.getDueDate())
                 .finished(poll.isFinished())
                 .creatorUsername(poll.getCreator() != null ? poll.getCreator().getUsername() : null)
                 .questions(poll.getQuestions() != null ? 
                         poll.getQuestions().stream().map(questionMapper::toDto).collect(Collectors.toList()) : null)
+                .invitedUsernames(poll.getInvitedUsers() != null ?
+                        poll.getInvitedUsers().stream().map(User::getUsername).collect(Collectors.toList()) : null)
                 .build();
     }
 
@@ -32,6 +36,7 @@ public class PollMapper {
                 .id(dto.getId())
                 .title(dto.getTitle())
                 .description(dto.getDescription())
+                .dueDate(dto.getDueDate())
                 .finished(dto.isFinished())
                 .build();
         

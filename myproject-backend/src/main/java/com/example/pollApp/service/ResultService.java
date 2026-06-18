@@ -1,9 +1,11 @@
 package com.example.pollApp.service;
 
+import com.example.pollApp.dto.ParticipationDTO;
 import com.example.pollApp.dto.PollResultDTO;
 import com.example.pollApp.dto.QuestionResultDTO;
 import com.example.pollApp.entity.*;
 import com.example.pollApp.exception.ResourceNotFoundException;
+import com.example.pollApp.mapper.ParticipationMapper;
 import com.example.pollApp.repository.ParticipationRepository;
 import com.example.pollApp.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +21,20 @@ public class ResultService {
 
     private final PollRepository pollRepository;
     private final ParticipationRepository participationRepository;
+    private final ParticipationMapper participationMapper;
 
     @Transactional(readOnly = true)
-    public PollResultDTO getAggregateResults(Long pollId) {
+    public PollResultDTO getAggregateResults(Long pollId, Long userId) {
         Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new ResourceNotFoundException("Poll not found"));
+
+        if (!poll.getCreator().getId().equals(userId)) {
+            throw new IllegalStateException("Only the creator can view results.");
+        }
+
+        if (!poll.isFinished()) {
+            throw new IllegalStateException("Results are only available once the poll is marked as Finished.");
+        }
 
         List<Participation> participations = participationRepository.findByPoll(poll);
         
@@ -38,14 +49,14 @@ public class ResultService {
                     .content(question.getContent())
                     .build();
 
-            if (question.getType() == QuestionType.TEXT) {
+            if (question.getType() == QuestionType.PLAIN_TEXT) {
                 result.setTextResponses(answers.stream().map(Answer::getContent).collect(Collectors.toList()));
             } else {
                 Map<String, Long> distribution = answers.stream()
                         .collect(Collectors.groupingBy(Answer::getContent, Collectors.counting()));
                 result.setDistribution(distribution);
 
-                if (question.getType() == QuestionType.SCALE_1_TO_5) {
+                if (question.getType() == QuestionType.NUMERIC_1_TO_5) {
                     double avg = answers.stream()
                             .mapToInt(a -> Integer.parseInt(a.getContent()))
                             .average()
@@ -61,5 +72,23 @@ public class ResultService {
                 .pollTitle(poll.getTitle())
                 .questionResults(questionResults)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ParticipationDTO> getIndividualResponses(Long pollId, Long userId) {
+        Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll not found"));
+
+        if (!poll.getCreator().getId().equals(userId)) {
+            throw new IllegalStateException("Only the creator can view results.");
+        }
+
+        if (!poll.isFinished()) {
+            throw new IllegalStateException("Results are only available once the poll is marked as Finished.");
+        }
+
+        return participationRepository.findByPoll(poll).stream()
+                .map(participationMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

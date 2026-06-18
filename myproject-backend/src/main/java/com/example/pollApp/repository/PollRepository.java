@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface PollRepository extends JpaRepository<Poll, Long> {
+    boolean existsByTitle(String title);
+    boolean existsByTitleAndIdNot(String title, Long id);
     List<Poll> findByCreator(User creator);
     List<Poll> findByFinished(boolean finished);
 }
