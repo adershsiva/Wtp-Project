@@ -28,8 +28,8 @@ public class PollController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PollDTO>> getAllPolls() {
-        return ResponseEntity.ok(pollService.getAllPolls());
+    public ResponseEntity<List<PollDTO>> getAllPolls(@RequestParam(required = false) Long userId) {
+        return ResponseEntity.ok(pollService.getAllPolls(userId));
     }
 
     @PutMapping("/{id}")

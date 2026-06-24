@@ -2,8 +2,10 @@ import api from '../api/axios';
 import type { PollDTO } from '../types';
 
 export const pollService = {
-  getAllPolls: async () => {
-    const response = await api.get<PollDTO[]>('/polls');
+  getAllPolls: async (userId?: number) => {
+    const response = await api.get<PollDTO[]>('/polls', {
+      params: { userId }
+    });
     return response.data;
   },
   getPoll: async (id: number) => {

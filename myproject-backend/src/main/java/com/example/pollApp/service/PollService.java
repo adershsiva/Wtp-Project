@@ -47,8 +47,11 @@ public class PollService {
     }
 
     @Transactional(readOnly = true)
-    public List<PollDTO> getAllPolls() {
-        return pollRepository.findAll().stream()
+    public List<PollDTO> getAllPolls(Long userId) {
+        if (userId == null) {
+            return List.of();
+        }
+        return pollRepository.findVisiblePolls(userId).stream()
                 .map(pollMapper::toDto)
                 .collect(Collectors.toList());
     }

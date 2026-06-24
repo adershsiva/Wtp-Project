@@ -14,7 +14,7 @@ const HomePage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const polls = await pollService.getAllPolls();
+        const polls = await pollService.getAllPolls(currentUser?.id);
         setAllPolls(polls);
         if (currentUser) {
           const pending = await participationService.getPendingPolls(currentUser.id);
