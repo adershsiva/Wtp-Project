@@ -33,8 +33,8 @@ public class PollController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PollDTO> updatePoll(@PathVariable Long id, @Valid @RequestBody PollDTO pollDTO) {
-        return ResponseEntity.ok(pollService.updatePoll(id, pollDTO));
+    public ResponseEntity<PollDTO> updatePoll(@PathVariable Long id, @Valid @RequestBody PollDTO pollDTO, @RequestParam Long userId) {
+        return ResponseEntity.ok(pollService.updatePoll(id, pollDTO, userId));
     }
 
     @PostMapping("/{id}/invite")

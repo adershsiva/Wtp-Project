@@ -16,8 +16,10 @@ export const pollService = {
     });
     return response.data;
   },
-  updatePoll: async (id: number, poll: PollDTO) => {
-    const response = await api.put<PollDTO>(`/polls/${id}`, poll);
+  updatePoll: async (id: number, poll: PollDTO, userId: number) => {
+    const response = await api.put<PollDTO>(`/polls/${id}`, poll, {
+      params: { userId }
+    });
     return response.data;
   },
   inviteUser: async (pollId: number, username: string, userId: number) => {

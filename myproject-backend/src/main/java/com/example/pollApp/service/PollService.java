@@ -54,9 +54,13 @@ public class PollService {
     }
 
     @Transactional
-    public PollDTO updatePoll(Long id, PollDTO pollDTO) {
+    public PollDTO updatePoll(Long id, PollDTO pollDTO, Long userId) {
         Poll existingPoll = pollRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));
+
+        if (!existingPoll.getCreator().getId().equals(userId)) {
+            throw new IllegalStateException("Only the creator can update the poll.");
+        }
 
         if (pollRepository.existsByTitleAndIdNot(pollDTO.getTitle(), id)) {
             throw new IllegalStateException("A poll with the exact same title already exists.");
