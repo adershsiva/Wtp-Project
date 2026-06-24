@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,5 +54,98 @@ class PollServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getTitle()).isEqualTo("Title");
+    }
+
+    @Test
+    void shouldUpdatePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll existingPoll = Poll.builder().id(pollId).title("Old Title").creator(creator).build();
+        PollDTO updateDto = PollDTO.builder().title("New Title").description("New Desc").dueDate(LocalDateTime.now().plusDays(1)).build();
+        Poll updatedPoll = Poll.builder().id(pollId).title("New Title").description("New Desc").creator(creator).build();
+        PollDTO expectedDto = PollDTO.builder().id(pollId).title("New Title").description("New Desc").build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(existingPoll));
+        when(pollRepository.existsByTitleAndIdNot("New Title", pollId)).thenReturn(false);
+        when(pollRepository.save(any())).thenReturn(updatedPoll);
+        when(pollMapper.toDto(any())).thenReturn(expectedDto);
+
+        // When
+        PollDTO result = pollService.updatePoll(pollId, updateDto, creatorId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getTitle()).isEqualTo("New Title");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNonCreatorTriesToUpdatePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        Long nonCreatorId = 3L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll existingPoll = Poll.builder().id(pollId).title("Old Title").creator(creator).build();
+        PollDTO updateDto = PollDTO.builder().title("New Title").build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(existingPoll));
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> {
+            pollService.updatePoll(pollId, updateDto, nonCreatorId);
+        });
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingToDuplicateTitle() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll existingPoll = Poll.builder().id(pollId).title("Old Title").creator(creator).build();
+        PollDTO updateDto = PollDTO.builder().title("Duplicate Title").build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(existingPoll));
+        when(pollRepository.existsByTitleAndIdNot("Duplicate Title", pollId)).thenReturn(true);
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> {
+            pollService.updatePoll(pollId, updateDto, creatorId);
+        });
+    }
+
+    @Test
+    void shouldReturnVisiblePolls() {
+        // Given
+        Long userId = 1L;
+        Poll poll1 = Poll.builder().id(101L).title("Poll 1").build();
+        Poll poll2 = Poll.builder().id(102L).title("Poll 2").build();
+        List<Poll> visiblePolls = List.of(poll1, poll2);
+
+        PollDTO dto1 = PollDTO.builder().title("Poll 1").build();
+        PollDTO dto2 = PollDTO.builder().title("Poll 2").build();
+
+        when(pollRepository.findVisiblePolls(userId)).thenReturn(visiblePolls);
+        when(pollMapper.toDto(poll1)).thenReturn(dto1);
+        when(pollMapper.toDto(poll2)).thenReturn(dto2);
+
+        // When
+        List<PollDTO> result = pollService.getAllPolls(userId);
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getTitle()).isEqualTo("Poll 1");
+        assertThat(result.get(1).getTitle()).isEqualTo("Poll 2");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenUserIdIsNullForVisiblePolls() {
+        // When
+        List<PollDTO> result = pollService.getAllPolls(null);
+
+        // Then
+        assertThat(result).isEmpty();
     }
 }
