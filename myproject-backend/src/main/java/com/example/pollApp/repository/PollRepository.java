@@ -13,6 +13,6 @@ public interface PollRepository extends JpaRepository<Poll, Long> {
     List<Poll> findByCreator(User creator);
     List<Poll> findByFinished(boolean finished);
 
-    @Query("SELECT DISTINCT p FROM Poll p LEFT JOIN p.invitedUsers u WHERE p.creator.id = :userId OR u.id = :userId")
+    @Query("SELECT DISTINCT p FROM Poll p LEFT JOIN p.invitedUsers u WHERE p.creator.id = :userId OR u.id = :userId ORDER BY p.dueDate DESC")
     List<Poll> findVisiblePolls(@Param("userId") Long userId);
 }

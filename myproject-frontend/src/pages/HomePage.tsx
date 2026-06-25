@@ -12,14 +12,16 @@ const HomePage = () => {
   const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
     const loadData = async () => {
       try {
-        const polls = await pollService.getAllPolls(currentUser?.id);
+        const polls = await pollService.getAllPolls(currentUser.id);
         setAllPolls(polls);
-        if (currentUser) {
-          const pending = await participationService.getPendingPolls(currentUser.id);
-          setPendingPolls(pending);
-        }
+        const pending = await participationService.getPendingPolls(currentUser.id);
+        setPendingPolls(pending);
       } catch (error) {
         console.error('Error loading polls', error);
       } finally {
@@ -36,6 +38,36 @@ const HomePage = () => {
           <span className="visually-hidden">Loading...</span>
         </div>
         <h4 className="text-secondary fw-semibold">Loading Polls...</h4>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="fade-in-up py-5 text-center">
+        <div className="mx-auto p-5 rounded-4 glass-panel shadow-lg" style={{ maxWidth: '800px', marginTop: '2rem' }}>
+          <div className="mb-4 d-inline-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--accent-light)', border: '1px solid var(--accent-border)' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 8px var(--accent-border))' }}>
+              <path d="M12 20V10" />
+              <path d="M18 20V4" />
+              <path d="M6 20v-4" />
+            </svg>
+          </div>
+          <h1 className="display-5 fw-bold mb-3" style={{ letterSpacing: '-0.03em' }}>
+            Welcome to PollApp
+          </h1>
+          <p className="lead text-secondary mb-5 mx-auto" style={{ maxWidth: '600px', fontSize: '1.15rem', lineHeight: '1.7' }}>
+            Create custom polls, invite your team, cast your votes, and track live progress with interactive, real-time results. Log in or register to get started.
+          </p>
+          <div className="d-flex justify-content-center gap-3 flex-wrap">
+            <Link to="/login" className="btn btn-primary btn-lg px-5 shadow-sm">
+              Login to View Polls
+            </Link>
+            <Link to="/register" className="btn btn-secondary btn-lg px-5">
+              Register Now
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -58,9 +90,9 @@ const HomePage = () => {
             <div className="row">
               {pendingPolls.map((poll) => (
                 <div key={poll.id} className="col-lg-4 col-md-6 col-sm-12 mb-4">
-                  <div className="card h-100 border-primary">
+                  <div className="card h-100 border-warning" style={{ borderStyle: 'dashed', backgroundColor: 'rgba(245, 158, 11, 0.01)' }}>
                     <div className="card-body d-flex flex-column">
-                      <h5 className="card-title text-primary">{poll.title}</h5>
+                      <h5 className="card-title fw-bold" style={{ color: 'var(--warning)' }}>{poll.title}</h5>
                       <p className="card-text text-truncate mb-4">{poll.description}</p>
                       <div className="text-muted small mb-4 mt-auto">
                         <div className="mb-1">

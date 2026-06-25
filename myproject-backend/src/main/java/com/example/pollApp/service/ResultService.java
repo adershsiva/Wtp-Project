@@ -32,9 +32,6 @@ public class ResultService {
             throw new IllegalStateException("Only the creator can view results.");
         }
 
-        if (!poll.isFinished()) {
-            throw new IllegalStateException("Results are only available once the poll is marked as Finished.");
-        }
 
         List<Participation> participations = participationRepository.findByPoll(poll);
         
@@ -83,9 +80,6 @@ public class ResultService {
             throw new IllegalStateException("Only the creator can view results.");
         }
 
-        if (!poll.isFinished()) {
-            throw new IllegalStateException("Results are only available once the poll is marked as Finished.");
-        }
 
         return participationRepository.findByPoll(poll).stream()
                 .map(participationMapper::toDto)
