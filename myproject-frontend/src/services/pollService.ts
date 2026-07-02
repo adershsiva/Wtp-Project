@@ -36,6 +36,18 @@ export const pollService = {
     });
     return response.data;
   },
+  pausePoll: async (id: number, userId: number) => {
+    const response = await api.patch<PollDTO>(`/polls/${id}/pause`, null, {
+      params: { userId }
+    });
+    return response.data;
+  },
+  resumePoll: async (id: number, userId: number) => {
+    const response = await api.patch<PollDTO>(`/polls/${id}/resume`, null, {
+      params: { userId }
+    });
+    return response.data;
+  },
   deletePoll: async (id: number, userId: number) => {
     await api.delete(`/polls/${id}`, {
       params: { userId }

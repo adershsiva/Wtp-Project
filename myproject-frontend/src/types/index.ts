@@ -18,6 +18,7 @@ export interface PollDTO {
   description: string;
   dueDate: string; // ISO string
   finished?: boolean;
+  paused?: boolean;
   creatorUsername?: string;
   questions: QuestionDTO[];
   invitedUsernames?: string[];

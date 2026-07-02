@@ -22,6 +22,7 @@ public class PollMapper {
                 .description(poll.getDescription())
                 .dueDate(poll.getDueDate())
                 .finished(poll.isFinished())
+                .paused(poll.isPaused())
                 .creatorUsername(poll.getCreator() != null ? poll.getCreator().getUsername() : null)
                 .questions(poll.getQuestions() != null ? 
                         poll.getQuestions().stream().map(questionMapper::toDto).collect(Collectors.toList()) : null)
@@ -38,6 +39,7 @@ public class PollMapper {
                 .description(dto.getDescription())
                 .dueDate(dto.getDueDate())
                 .finished(dto.isFinished())
+                .paused(dto.isPaused())
                 .build();
         
         if (dto.getQuestions() != null) {

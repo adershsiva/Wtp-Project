@@ -114,6 +114,40 @@ public class PollService {
     }
 
     @Transactional
+    public PollDTO pausePoll(Long id, Long creatorId) {
+        Poll poll = pollRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));
+
+        if (!poll.getCreator().getId().equals(creatorId)) {
+            throw new IllegalStateException("Only the creator can pause the poll.");
+        }
+
+        if (poll.isFinished()) {
+            throw new IllegalStateException("Cannot pause a finished poll.");
+        }
+
+        poll.setPaused(true);
+        return pollMapper.toDto(pollRepository.save(poll));
+    }
+
+    @Transactional
+    public PollDTO resumePoll(Long id, Long creatorId) {
+        Poll poll = pollRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));
+
+        if (!poll.getCreator().getId().equals(creatorId)) {
+            throw new IllegalStateException("Only the creator can resume the poll.");
+        }
+
+        if (poll.isFinished()) {
+            throw new IllegalStateException("Cannot resume a finished poll.");
+        }
+
+        poll.setPaused(false);
+        return pollMapper.toDto(pollRepository.save(poll));
+    }
+
+    @Transactional
     public void deletePoll(Long id, Long creatorId) {
         Poll poll = pollRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Poll not found with id: " + id));

@@ -54,16 +54,17 @@ function App() {
                 </li>
               )}
             </ul>
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center gap-3">
               {user ? (
                 <>
-                  <span className="text-light me-3">Welcome, {user.username}</span>
-                  <button className="btn btn-outline-light btn-sm" onClick={() => { handleLogout(); setIsNavOpen(false); }}>Logout</button>
+                  <span className="text-white-50" style={{ marginRight: '6px' }}>Welcome,</span>
+                  <strong className="text-white" style={{ marginRight: '16px' }}>{user.username}</strong>
+                  <button className="btn btn-outline-light btn-sm px-3" onClick={() => { handleLogout(); setIsNavOpen(false); }}>Logout</button>
                 </>
               ) : (
                 <>
-                  <Link className="btn btn-outline-light btn-sm me-2" to="/login" onClick={() => setIsNavOpen(false)}>Login</Link>
-                  <Link className="btn btn-light btn-sm" to="/register" onClick={() => setIsNavOpen(false)}>Register</Link>
+                  <Link className="btn btn-outline-light btn-sm px-3" to="/login" onClick={() => setIsNavOpen(false)}>Login</Link>
+                  <Link className="btn btn-light btn-sm px-3" to="/register" onClick={() => setIsNavOpen(false)}>Register</Link>
                 </>
               )}
             </div>
@@ -83,7 +84,7 @@ function App() {
 
       <footer className="footer">
         <div className="container text-center">
-          <p className="mb-0">&copy; 2026 Poll Management Application. Built with visual excellence.</p>
+          <p className="mb-0">&copy; 2026 Poll Management Application. Created by Adersh S.</p>
         </div>
       </footer>
     </Router>

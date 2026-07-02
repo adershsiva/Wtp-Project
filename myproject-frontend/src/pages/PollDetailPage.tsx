@@ -25,6 +25,7 @@ const PollDetailPage = () => {
   const isCreator = poll?.creatorUsername === currentUser?.username;
   const isExpired = poll ? new Date(poll.dueDate) < new Date() : false;
   const isFinished = poll?.finished;
+  const isPaused = poll?.paused;
 
   useEffect(() => {
     if (id) {
@@ -36,7 +37,7 @@ const PollDetailPage = () => {
     try {
       const data = await pollService.getPoll(pollId);
       setPoll(data);
-      if (data.finished && currentUser && data.creatorUsername === currentUser.username) {
+      if (currentUser && data.creatorUsername === currentUser.username) {
         const res = await resultService.getAggregateResults(pollId, currentUser.id);
         setResults(res);
         const ind = await resultService.getIndividualResponses(pollId, currentUser.id);
@@ -137,6 +138,26 @@ const PollDetailPage = () => {
     }
   };
 
+  const handlePause = async () => {
+    try {
+      await pollService.pausePoll(poll!.id!, currentUser!.id);
+      alert('Poll paused!');
+      loadPollData(poll!.id!);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to pause poll.');
+    }
+  };
+
+  const handleResume = async () => {
+    try {
+      await pollService.resumePoll(poll!.id!, currentUser!.id);
+      alert('Poll resumed!');
+      loadPollData(poll!.id!);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to resume poll.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to completely delete this poll? This action cannot be undone.')) return;
     try {
@@ -146,6 +167,61 @@ const PollDetailPage = () => {
     } catch (error: any) {
       alert(error.response?.data?.message || 'Failed to delete poll.');
     }
+  };
+
+  const downloadCSV = () => {
+    if (!poll || !individualResponses) return;
+
+    // Header row: Participant name, followed by each question content
+    const headers = ['Participant', ...poll.questions.map(q => `"${q.content.replace(/"/g, '""')}"`)];
+    
+    // Data rows: Individual participant responses
+    const rows = individualResponses.map(resp => {
+      const rowData = [resp.username || 'Anonymous'];
+      
+      poll.questions.forEach(q => {
+        const ans = resp.answers.find(a => a.questionId === q.id);
+        const answerText = ans ? ans.content : '';
+        rowData.push(`"${answerText.replace(/"/g, '""')}"`);
+      });
+      
+      return rowData.join(',');
+    });
+
+    // Summary / Aggregates section at the bottom
+    const summaryRows = [
+      '',
+      'Summary / Aggregate Results',
+      'Question,Type,Statistic,Value'
+    ];
+
+    results?.questionResults.forEach(qr => {
+      const q = poll.questions.find(quest => quest.id === qr.questionId);
+      const qText = `"${qr.content.replace(/"/g, '""')}"`;
+      const qType = q ? q.type : 'N/A';
+      
+      if (qr.average !== undefined && qr.average !== null) {
+        summaryRows.push(`${qText},${qType},Average Rating,${qr.average.toFixed(2)}`);
+      }
+      if (qr.distribution) {
+        Object.entries(qr.distribution).forEach(([key, count]) => {
+          summaryRows.push(`${qText},${qType},Vote count for [${key}],${count}`);
+        });
+      }
+      if (qr.textResponses && qr.textResponses.length > 0) {
+        summaryRows.push(`${qText},${qType},Total text responses,${qr.textResponses.length}`);
+      }
+    });
+
+    const csvContent = [headers.join(','), ...rows, ...summaryRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `poll_results_${poll.id}_${poll.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -243,12 +319,40 @@ const PollDetailPage = () => {
               </button>
             )}
             {isCreator && !isFinished && (
+              isPaused ? (
+                <button className="btn btn-success" onClick={handleResume}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                  Resume Poll
+                </button>
+              ) : (
+                <button className="btn btn-secondary" onClick={handlePause}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                    <rect x="6" y="4" width="4" height="16" />
+                    <rect x="14" y="4" width="4" height="16" />
+                  </svg>
+                  Pause Poll
+                </button>
+              )
+            )}
+            {isCreator && !isFinished && (
               <button className="btn btn-warning" onClick={handleFinish}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
                 Finish Poll
+              </button>
+            )}
+            {isCreator && isFinished && (
+              <button className="btn btn-outline-success" onClick={downloadCSV}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export Results (CSV)
               </button>
             )}
             {isCreator && (
@@ -297,85 +401,85 @@ const PollDetailPage = () => {
             </div>
           )}
 
-          {isFinished ? (
-            <div className="fade-in-up">
-              <h5 className="mt-4 mb-3 fw-bold">Aggregate Results</h5>
-              {results?.questionResults.map((qr) => (
-                <div key={qr.questionId} className="card mb-3" style={{ transition: 'none', transform: 'none' }}>
-                  <div className="card-body p-4">
-                    <h6 className="card-title fw-bold mb-3">{qr.content}</h6>
-                    {qr.average !== undefined && qr.average !== null && (
-                      <div className="mb-3 d-flex align-items-center gap-2">
-                        <span className="text-muted small">Average Rating:</span>
-                        <span className="fs-5 fw-bold text-primary">{qr.average.toFixed(2)}</span>
-                        <span className="text-muted small">/ 5.00</span>
+          <div className="fade-in-up">
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <h5 className="fw-bold mb-0">{isFinished ? 'Final Aggregate Results' : 'Current Progress (Aggregate)'}</h5>
+              {!isFinished && (
+                isPaused ? (
+                  <span className="badge bg-secondary text-light">Poll is Paused</span>
+                ) : (
+                  <span className="badge bg-warning text-dark">Poll is Active (Live Progress)</span>
+                )
+              )}
+            </div>
+            {results?.questionResults.map((qr) => (
+              <div key={qr.questionId} className="card mb-3" style={{ transition: 'none', transform: 'none' }}>
+                <div className="card-body p-4">
+                  <h6 className="card-title fw-bold mb-3">{qr.content}</h6>
+                  {qr.average !== undefined && qr.average !== null && (
+                    <div className="mb-3 d-flex align-items-center gap-2">
+                      <span className="text-muted small">Average Rating:</span>
+                      <span className="fs-5 fw-bold text-primary">{qr.average.toFixed(2)}</span>
+                      <span className="text-muted small">/ 5.00</span>
+                    </div>
+                  )}
+                  {qr.distribution && (
+                    <div className="mb-3">
+                      <div className="text-muted small mb-2">Vote Distribution:</div>
+                      <div className="d-flex flex-wrap gap-2">
+                        {Object.entries(qr.distribution).map(([val, count]) => (
+                          <span key={val} className="badge bg-info text-dark" style={{ fontSize: '0.8rem' }}>
+                            Option "{val}": <strong>{count}</strong> {count === 1 ? 'vote' : 'votes'}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    {qr.distribution && (
-                      <div className="mb-3">
-                        <div className="text-muted small mb-2">Vote Distribution:</div>
-                        <div className="d-flex flex-wrap gap-2">
-                          {Object.entries(qr.distribution).map(([val, count]) => (
-                            <span key={val} className="badge bg-info text-dark" style={{ fontSize: '0.8rem' }}>
-                              Option "{val}": <strong>{count}</strong> {count === 1 ? 'vote' : 'votes'}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {qr.textResponses && qr.textResponses.length > 0 && (
-                      <div>
-                        <div className="text-muted small mb-2">Text Responses:</div>
-                        <ul className="list-group list-group-flush border rounded overflow-hidden">
-                          {qr.textResponses.map((res, i) => (
-                            <li key={i} className="list-group-item bg-transparent text-secondary small py-2 px-3">{res}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  {qr.textResponses && qr.textResponses.length > 0 && (
+                    <div>
+                      <div className="text-muted small mb-2">Text Responses:</div>
+                      <ul className="list-group list-group-flush border rounded overflow-hidden">
+                        {qr.textResponses.map((res, i) => (
+                          <li key={i} className="list-group-item bg-transparent text-secondary small py-2 px-3">{res}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              ))}
-
-              <h5 className="mt-5 mb-3 fw-bold">Individual Responses</h5>
-              <div className="table-responsive">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Participant</th>
-                      {poll.questions.map(q => <th key={q.id}>{q.content}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {individualResponses.map((ir, i) => (
-                      <tr key={i}>
-                        <td className="fw-bold text-primary">{ir.username}</td>
-                        {poll.questions.map(q => {
-                          const answer = ir.answers?.find(a => a.questionId === q.id);
-                          return <td key={q.id}>{answer?.content || <span className="text-muted italic">-</span>}</td>;
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
+            ))}
+
+            <h5 className="mt-5 mb-3 fw-bold">Individual Responses</h5>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Participant</th>
+                    {poll.questions.map(q => <th key={q.id}>{q.content}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {individualResponses.map((ir, i) => (
+                    <tr key={i}>
+                      <td className="fw-bold text-primary">{ir.username}</td>
+                      {poll.questions.map(q => {
+                        const answer = ir.answers?.find(a => a.questionId === q.id);
+                        return <td key={q.id}>{answer?.content || <span className="text-muted italic">-</span>}</td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : (
-            <div className="alert alert-info d-flex align-items-center gap-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-              <div>Results and statistics will be unlocked here once you mark this poll as <strong>Finished</strong>.</div>
-            </div>
-          )}
+          </div>
         </section>
       )}
 
       {(!isCreator || isFinished) && (
         <section className="fade-in-up">
-          <h3 className="mb-4 fw-bold">{isFinished ? 'Poll Finished' : 'Submit Your Responses'}</h3>
+          <h3 className="mb-4 fw-bold">
+            {isFinished ? 'Poll Finished' : isPaused ? 'Poll Paused' : 'Submit Your Responses'}
+          </h3>
           {isFinished ? (
             <div className="alert alert-secondary d-flex align-items-center gap-3">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -383,6 +487,14 @@ const PollDetailPage = () => {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
               <div>This poll is closed. No more responses are being accepted.</div>
+            </div>
+          ) : isPaused ? (
+            <div className="alert alert-warning d-flex align-items-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+              <div>This poll is currently <strong>Paused</strong> by the creator. Participation is temporarily suspended.</div>
             </div>
           ) : isExpired ? (
             <div className="alert alert-danger d-flex align-items-center gap-3">

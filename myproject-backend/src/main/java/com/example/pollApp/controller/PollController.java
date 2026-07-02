@@ -47,6 +47,16 @@ public class PollController {
         return ResponseEntity.ok(pollService.finishPoll(id, userId));
     }
 
+    @PatchMapping("/{id}/pause")
+    public ResponseEntity<PollDTO> pausePoll(@PathVariable Long id, @RequestParam Long userId) {
+        return ResponseEntity.ok(pollService.pausePoll(id, userId));
+    }
+
+    @PatchMapping("/{id}/resume")
+    public ResponseEntity<PollDTO> resumePoll(@PathVariable Long id, @RequestParam Long userId) {
+        return ResponseEntity.ok(pollService.resumePoll(id, userId));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePoll(@PathVariable Long id, @RequestParam Long userId) {
         pollService.deletePoll(id, userId);

@@ -26,6 +26,8 @@ public class PollDTO {
 
     private boolean finished;
 
+    private boolean paused;
+
     private String creatorUsername;
 
     @NotEmpty(message = "Poll must have at least one question")

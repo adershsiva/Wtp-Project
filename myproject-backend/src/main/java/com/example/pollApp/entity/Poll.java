@@ -32,14 +32,19 @@ public class Poll {
     @Column(nullable = false)
     private boolean finished = false;
 
+    @Column(nullable = false)
+    private boolean paused = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
     private User creator;
 
+    @Builder.Default
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     private List<Question> questions = new ArrayList<>();
 
+    @Builder.Default
     @ManyToMany
     @JoinTable(
         name = "poll_invitations_users",
@@ -48,6 +53,11 @@ public class Poll {
     )
     private List<User> invitedUsers = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participation> participations = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Invitation> invitations = new ArrayList<>();
 }

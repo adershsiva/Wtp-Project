@@ -36,6 +36,10 @@ public class ParticipationService {
             throw new IllegalStateException("Cannot participate in a finished poll");
         }
 
+        if (poll.isPaused()) {
+            throw new IllegalStateException("Cannot participate in a paused poll");
+        }
+
         if (poll.getDueDate().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Cannot participate in a poll after its due date");
         }
