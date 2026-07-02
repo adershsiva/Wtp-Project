@@ -148,4 +148,115 @@ class PollServiceTest {
         // Then
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void shouldDeletePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll poll = Poll.builder().id(pollId).creator(creator).build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(poll));
+
+        // When
+        pollService.deletePoll(pollId, creatorId);
+
+        // Then
+        org.mockito.Mockito.verify(pollRepository).delete(poll);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNonCreatorTriesToDeletePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        Long nonCreatorId = 3L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll poll = Poll.builder().id(pollId).creator(creator).build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(poll));
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> {
+            pollService.deletePoll(pollId, nonCreatorId);
+        });
+    }
+
+    @Test
+    void shouldPausePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll poll = Poll.builder().id(pollId).creator(creator).finished(false).paused(false).build();
+        PollDTO expectedDto = PollDTO.builder().id(pollId).paused(true).build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(poll));
+        when(pollRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(pollMapper.toDto(any())).thenReturn(expectedDto);
+
+        // When
+        PollDTO result = pollService.pausePoll(pollId, creatorId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.isPaused()).isTrue();
+        assertThat(poll.isPaused()).isTrue();
+    }
+
+    @Test
+    void shouldResumePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll poll = Poll.builder().id(pollId).creator(creator).finished(false).paused(true).build();
+        PollDTO expectedDto = PollDTO.builder().id(pollId).paused(false).build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(poll));
+        when(pollRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(pollMapper.toDto(any())).thenReturn(expectedDto);
+
+        // When
+        PollDTO result = pollService.resumePoll(pollId, creatorId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.isPaused()).isFalse();
+        assertThat(poll.isPaused()).isFalse();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNonCreatorTriesToPausePoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        Long nonCreatorId = 3L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll poll = Poll.builder().id(pollId).creator(creator).finished(false).build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(poll));
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> {
+            pollService.pausePoll(pollId, nonCreatorId);
+        });
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTriesToPauseFinishedPoll() {
+        // Given
+        Long pollId = 1L;
+        Long creatorId = 2L;
+        User creator = User.builder().id(creatorId).username("creator").build();
+        Poll poll = Poll.builder().id(pollId).creator(creator).finished(true).build();
+
+        when(pollRepository.findById(pollId)).thenReturn(Optional.of(poll));
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> {
+            pollService.pausePoll(pollId, creatorId);
+        });
+    }
 }
