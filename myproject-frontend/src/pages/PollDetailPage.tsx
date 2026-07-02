@@ -209,7 +209,9 @@ const PollDetailPage = () => {
         });
       }
       if (qr.textResponses && qr.textResponses.length > 0) {
-        summaryRows.push(`${qText},${qType},Total text responses,${qr.textResponses.length}`);
+        qr.textResponses.forEach((respText, index) => {
+          summaryRows.push(`${qText},${qType},Response #${index + 1},"${respText.replace(/"/g, '""')}"`);
+        });
       }
     });
 
