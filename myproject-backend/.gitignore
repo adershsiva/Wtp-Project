@@ -2,6 +2,8 @@ HELP.md
 target/
 .mvn/
 *.log
+db-data/
+**/db-data/
 /db/db-data/
 !/db/docker-compose.yml
 
